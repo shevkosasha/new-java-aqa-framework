@@ -4,13 +4,18 @@ import models.AddUserResponse;
 import models.User;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
+import static testdata.TestData.DEFAULT_USER;
+import static testdata.TestData.INVALID_USER;
 
-public class ApiTests {
-
+class ApiTests {
     UserController userController = new UserController();
 
     @Test
@@ -72,23 +77,33 @@ public class ApiTests {
 
     @Test
     void createUserControllerTest() {
-        User user = new User(0,
-                "username",
-                "firstName",
-                "lastName",
-                "email",
-                "password",
-                "phone",
-                0);
-        User userBuilder = User.builder()
-                .username("username")
-                .firstName("firstName")
-                .lastName("lastName")
-                .email("email")
-                .phone("password")
-                .userStatus(0)
-                .build();
+        Response response = userController.createUser(DEFAULT_USER);
+        AddUserResponse createdUserResponse = response.as(AddUserResponse.class);
 
+        Assertions.assertEquals(200, response.statusCode());
+        Assertions.assertEquals(200, createdUserResponse.getCode());
+        Assertions.assertEquals("unknown", createdUserResponse.getType());
+        Assertions.assertFalse(createdUserResponse.getMessage().isEmpty());
+    }
+
+    @Test
+    void createInvalidUserControllerTest() {
+        Response response = userController.createUser(INVALID_USER);
+        AddUserResponse createdUserResponse = response.as(AddUserResponse.class);
+
+        Assertions.assertEquals(200, response.statusCode());
+        Assertions.assertEquals(200, createdUserResponse.getCode());
+        Assertions.assertEquals("unknown", createdUserResponse.getType());
+        Assertions.assertEquals("0", createdUserResponse.getMessage());
+    }
+
+    static Stream<User> users() {
+        return Stream.of(DEFAULT_USER, INVALID_USER);
+    }
+
+    @ParameterizedTest
+    @MethodSource("users")
+    void createUserParametrizedTest(User user) {
         Response response = userController.createUser(user);
         AddUserResponse createdUserResponse = response.as(AddUserResponse.class);
 
